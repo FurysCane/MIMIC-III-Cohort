@@ -1,0 +1,233 @@
+<!-- 
+http://stackoverflow.com/questions/9539294/adding-new-nodes-to-force-directed-layout
+http://bl.ocks.org/mbostock/1095795
+-->
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+.link {
+  stroke: #000;
+  stroke-width: 1.5px;
+}
+
+.node {
+  fill: #000;
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+
+
+</style>
+<body>
+    <svg id = "graph">
+            
+        </svg>
+</body>
+<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+<script type="text/javascript"></script>
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script>
+
+var width = 960,
+    height = 500;
+
+var color = d3.scale.category10();
+
+var nodes = [],
+    links = [];
+/*
+var force = d3.layout.force()
+    .nodes(nodes)
+    .links(links)
+    .charge(-400)
+    .linkDistance(120)
+    .size([width, height])
+    .on("tick", tick);
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+var node = svg.selectAll(".node"),
+    link = svg.selectAll(".link");
+
+// 1. Add three nodes and three links.
+setTimeout(function() {
+  var a = {id: "a"}, b = {id: "b"}, c = {id: "c"};
+  nodes.push(a, b, c);
+  links.push({source: a, target: b}, {source: a, target: c}, {source: b, target: c});
+  start();
+}, 0);
+
+// 2. Remove node B and associated links.
+setTimeout(function() {
+  nodes.splice(1, 1); // remove b
+  links.shift(); // remove a-b
+  links.pop(); // remove b-c
+  start();
+}, 3000);
+
+// Add node B back.
+setTimeout(function() {
+  var a = nodes[0], b = {id: "b"}, c = nodes[1];
+  nodes.push(b);
+  links.push({source: a, target: b}, {source: b, target: c});
+  start();
+}, 6000);
+
+function start() {
+  link = link.data(force.links(), function(d) { return d.source.id + "-" + d.target.id; });
+  link.enter().insert("line", ".node").attr("class", "link");
+  link.exit().remove();
+
+  node = node.data(force.nodes(), function(d) { return d.id;});
+  node.enter().append("circle").attr("class", function(d) { return "node " + d.id; }).attr("r", 8);
+  node.exit().remove();
+
+  force.start();
+}
+
+function tick() {
+  node.attr("cx", function(d) { return d.x; })
+      .attr("cy", function(d) { return d.y; })
+
+  link.attr("x1", function(d) { return d.source.x; })
+      .attr("y1", function(d) { return d.source.y; })
+      .attr("x2", function(d) { return d.target.x; })
+      .attr("y2", function(d) { return d.target.y; });
+}*/
+function myGraph(el) {
+
+    // Add and remove elements on the graph object
+    this.addNode = function (id) {
+        nodes.push({"id":id});
+        update();
+    }
+
+    this.removeNode = function (id) {
+        var i = 0;
+        var n = findNode(id);
+        while (i < links.length) {
+            if ((links[i]['source'] === n)||(links[i]['target'] == n)) links.splice(i,1);
+            else i++;
+        }
+        var index = findNodeIndex(id);
+        if(index !== undefined) {
+            nodes.splice(index, 1);
+            update();
+        }
+    }
+
+    this.addLink = function (sourceId, targetId) {
+        var sourceNode = findNode(sourceId);
+        var targetNode = findNode(targetId);
+
+        if((sourceNode !== undefined) && (targetNode !== undefined)) {
+            links.push({"source": sourceNode, "target": targetNode});
+            update();
+        }
+    }
+
+    var findNode = function (id) {
+        for (var i=0; i < nodes.length; i++) {
+            if (nodes[i].id === id)
+                return nodes[i]
+        };
+    }
+
+    var findNodeIndex = function (id) {
+        for (var i=0; i < nodes.length; i++) {
+            if (nodes[i].id === id)
+                return i
+        };
+    }
+
+    // set up the D3 visualisation in the specified element
+    var w = $(el).innerWidth(),
+        h = $(el).innerHeight();
+
+    var vis = this.vis = d3.select(el).append("svg:svg")
+        .attr("width", w)
+        .attr("height", h);
+
+    var force = d3.layout.force()
+        .gravity(.05)
+        .distance(100)
+        .charge(-100)
+        .size([w, h]);
+
+    var nodes = force.nodes(),
+        links = force.links();
+
+    var update = function () {
+
+        var link = vis.selectAll("line.link")
+            .data(links, function(d) { return d.source.id + "-" + d.target.id; });
+
+        link.enter().insert("line")
+            .attr("class", "link");
+
+        link.exit().remove();
+
+        var node = vis.selectAll("g.node")
+            .data(nodes, function(d) { return d.id;});
+
+        var nodeEnter = node.enter().append("g")
+            .attr("class", "node")
+            .call(force.drag);
+
+        /*nodeEnter.append("image")
+            .attr("class", "circle")
+            .attr("xlink:href", "https://d3nwyuy0nl342s.cloudfront.net/images/icons/public.png")
+            .attr("x", "-8px")
+            .attr("y", "-8px")
+            .attr("width", "16px")
+            .attr("height", "16px");*/
+
+        nodeEnter.append("text")
+            .attr("class", "nodetext")
+            .attr("dx", 12)
+            .attr("dy", ".35em")
+            .style("opacity", 1)
+            .style("color", "black")
+            .text(function(d) {return d.id});
+        
+        nodeEnter.append("circle")
+            .attr("stroke", "steelblue")
+            .style("fill", "#fff")
+            .attr("r", 10);
+            //.attr("strokewidth", 3px);
+        
+
+        node.exit().remove();
+
+        force.on("tick", function() {
+          link.attr("x1", function(d) { return d.source.x; })
+              .attr("y1", function(d) { return d.source.y; })
+              .attr("x2", function(d) { return d.target.x; })
+              .attr("y2", function(d) { return d.target.y; });
+
+          node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+        });
+
+        // Restart the force layout.
+        force.start();
+    }
+
+    // Make it all go
+    update();
+}
+
+graph = new myGraph("#graph");
+
+// You can do this from the console as much as you like...
+graph.addNode("Cause");
+graph.addNode("Effect");
+graph.addLink("Cause", "Effect");
+graph.addNode("A");
+graph.addNode("B");
+graph.addLink("A", "B");
+</script>
+
